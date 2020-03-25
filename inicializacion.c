@@ -1,7 +1,6 @@
 #include "general.c"
 #include "aux.c"
 
-
 /* 
     Inicializamos vectores peso con vectores equiespacioados de forma euclidea
 */
@@ -58,15 +57,79 @@ void inicialiceNeighbourVector(float vector[N][2], float neightbours[N][T]){
     
 }
 
-void inicialicePopulation(){
+/*
+    Inicializamos una poblacion de N individuos (cada uno con T dimensiones)
+    en un rango de 0 <= xi <= range
+*/
+void inicialicePopulation(float population[N][T]){
+    
+    float range = 1.0;
 
+    for (int i = 0; i < N; i++)
+    {
+        for (int j = 0; j < T; j++)
+        {
+            population[i][j] = (float)rand()/(float)(RAND_MAX/range);
+        }
+
+    }
+    
+}
+
+/*
+    Realizamos la evaluacion de la poblacion mediante las funciones de ZDT3
+*/
+void evaluate_zdt3(float population[N][T], float evaluation[N][2], float pReference[2]){
+
+    float tmp = 0.0;
+
+    float bestX = 1000000.0;
+    float bestY = 1000000.0;
+
+    for (int individuo = 0; individuo < N; individuo++)
+    {
+        float f1 = population[individuo][0];
+
+        //Limpio tmp para siguiente iteracion
+        tmp = 0.0;
+
+        //Realizo sumatorio
+        for (int j = 1; j < T; j++)
+        {
+            tmp += population[individuo][j];
+        }
+
+        float g = 1+((9*tmp)/(T-1));
+        float h = 1-sqrt(f1/g)-(f1/g)*sin(10*PI*f1);
+
+        float f2 = g*h;
+
+        // Guardamos la evaluacion para los individuos
+        evaluation[individuo][0] = f1;
+        evaluation[individuo][1] = f2;
+
+        //Vamos comprobando los valores para el punto de referencia
+        if(bestX > f1) bestX = f1;
+        if(bestY > f2) bestY = f2;
+    }
+
+    // Almaceno los mejores valores de cada objetivo (funciones que minimizan)
+    pReference[0] = bestX;
+    pReference[1] = bestY;
+    
 }
 
 int main(){
     alpha_vector[N][2];
     neightbours[N][T];
+    population[N][T];
+    evaluation[N][2];
+    pReference[2];
+
     inicialiceAlphaVector(alpha_vector);
     inicialiceNeighbourVector(alpha_vector, neightbours);
+    inicialicePopulation(population);
+    evaluate_zdt3(population, evaluation, pReference);
 
     return 0;
 }

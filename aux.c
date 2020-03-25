@@ -1,7 +1,10 @@
-#include "stdio.h"
-#include "math.h"
+#include <stdio.h>
+#include <math.h>
 #include <stdlib.h>
-#include "string.h"
+#include <string.h>
+
+// Definicion de la constante pi
+#define PI acos(-1.0)
 
 /*
     Calculo de la distancia euclidea de dos puntos (x1, y1) y (x2,y2)

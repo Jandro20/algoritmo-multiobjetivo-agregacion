@@ -1,4 +1,3 @@
-
 // Poblacion
 #define N 200
 
@@ -19,3 +18,11 @@ float alpha_vector[N][2];
 // Vectores de los vecinos
 float neightbours[N][T];
 
+// Vector de N individuos
+float population[N][T];
+
+// Vector para evaluacion [individuos](f1,f2)
+float evaluation[N][2];
+
+//Vector para punto de referencia (x,y)
+float pReference[2];
