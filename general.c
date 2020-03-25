@@ -17,5 +17,5 @@ int const p = 30;
 float alpha_vector[N][2];
 
 // Vectores de los vecinos
-int neightbours[N][T];
+float neightbours[N][T];
 
