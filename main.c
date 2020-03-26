@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 // Poblacion
 int const N = 200;
@@ -30,6 +31,12 @@ int comparation_function(const void * p1, const void * p2){
     return ( *(int *)p1 - *(int *) p2);
 }
 
+void swap(float *v1, float *v2){
+    float temp = *v1;
+    *v1=*v2;
+    *v2=temp;
+}
+
 /*  FUNCIONES PRINCIPALES   */
 
 /*  INICIALIZACION  */
@@ -55,37 +62,53 @@ void inicialiceAlphaVector(float vector[N][2]){
 /*
     Realizamos la vecindad de cada vector, con sus T-1 vecinos (vector incluido)
 */
-void inicialiceNeighbourVector(float vector[N][2], float neightbours[N][T]){
-
-    // Array para obtener los T primeros valores del array.
-    float *vecinos = (float *)malloc(T * sizeof(float));
+void inicialiceNeighbourVector(float vector[N][2], int neightbours[N][T]){
 
     // Array auxiliar para no machacar valores
-    float aux[N];
+    float aux[N][2];
 
     // ELemento i -> Calcular distancia euclidea con todo valor j
     for (int i = 0; i < N; i++)
     {
-        
         /* 
-        Obtengo array con las distancias euclideas desde i a todos los demás
+            Obtengo array con las distancias euclideas desde i a todos los demás
         */
         for (int j = 0; j < N; j++)
         {   
-            aux[j] = euclidea_distance(vector[i], vector[j]);
+            aux[j][0] = j; // Pnt al ser comparado
+            aux[j][1] = euclidea_distance(vector[i], vector[j]);    // Distancia
         }
+        printf("- x = %f - y = %f - \n", vector[i][0], vector[i][1]);
 
-        /*
-            Array ordenado, obtengo los T primeros valores y lo añado a la lista de vecinos.
+        /* 
+            Aplicamos ordenacion por bubble sort a las distancias desde el pnt i al resto.
         */
-        
-        vecinos = aux;
-        
-        for (int v = 0; v < T; v++)
+        for (int k1 = 0; k1 < N-1; k1++)
         {
-            neightbours[i][v] = vecinos[v];
+            for (int k2 = 0; k2 < N-k1-1; k2++)
+            {
+                if(aux[k2][1] > aux[k2+1][1])
+                {
+                    // Intercambio indices y valores
+                    swap(&aux[k2][0], &aux[k2+1][0]);
+                    swap(&aux[k2][1], &aux[k2+1][1]);
+                }
+            }
         }
-         
+        
+        /*
+            Almaceno los indices que forman el conjuntos de vecinos para el subproblema i
+        */
+        for (int pt = 0; pt < T; pt++)
+        {
+            neightbours[i][pt] = (int) aux[pt][0];
+            int indice = neightbours[i][pt];
+            printf("pt(%f , %f) - INDICE: %d -> %d = (%f , %f) \n",vector[i][0], vector[i][1], i, neightbours[i][pt], vector[indice][0], vector[indice][1]);
+
+        }        
+        
+        printf("\n");
+
     }
     
 }
@@ -154,20 +177,69 @@ void evaluate_zdt3(float population[N][T], float evaluation[N][2], float pRefere
 
 /*  ACCIONES POR ITERACION  */
 
-void iteraciones(float population[N][T], float neightbours[N][T]){
+void iteraciones(float population[N][T], int neightbours[N][T]){
     
+    //Operadores
+    float F = 0.5;  //<- Mutacion
+    float CR = 0.5; //<- Cruce
+
+
     // Realizamos G iteraciones x N subproblemas = G*N = 4000
     for (int iteracion = 0; iteracion < G; iteracion++)
     {
         for (int subproblema = 0; subproblema < N; subproblema++)
         {
-            /*REPRODUCCION*/
+            /* REPRODUCCION */
+            /* MUTACION Y CRUCE */
 
-            /*EVALUACION*/
+            //Conjunto aleatorio
+            float vectoresEscogidos[3][T];
+            //Seleccionamos un conjuntos aleatorio de indiviuos 
+                //Escogo los 3 vecinos de forma aleatoria
+                int r1, r2, r3;
 
-            /*ACTUALIZACION_PUNTO_REFERENCIA*/
+                do
+                {
+                    r1 = (int)rand() % T;
+                } while( r1==subproblema );
+                do
+                {
+                    r2 = (int)rand() % T;
+                } while( r2==subproblema || r2==r1);
+                do
+                {
+                    r3 = (int)rand() % T;
+                } while( r3==subproblema || r3==r1 || r3==r2 );
 
-            /*ACTUALIZACION_VECINOS*/
+
+
+                int aleatorio = 0;
+                for (int nE = 0; nE < 3; nE++)
+                {
+                    aleatorio = rand() % T;
+                    for (int sub = 0; sub < T; sub++)
+                    {
+                        vectoresEscogidos[nE][sub] = neightbours[subproblema][sub];
+                    }
+                }
+                
+            // Aplicacion de operadores evolutivos.
+                //Operador de mutacion
+                //Resultado de la mutacion
+                float v_i[T];
+                
+                for (int mutation = 0; mutation < T; mutation++)
+                {
+                    v_i[T] = vectoresEscogidos[0][T] + F*(vectoresEscogidos[1][T] - vectoresEscogidos[2][T]);
+                }
+                
+
+
+            /* EVALUACION */
+
+            /* ACTUALIZACION_PUNTO_REFERENCIA */
+
+            /* ACTUALIZACION_VECINOS */
         }
         
     }
@@ -180,7 +252,7 @@ int main(){
     float alpha_vector[N][2];
 
     // Vectores de los vecinos
-    float neightbours[N][T];
+    int neightbours[N][T];
 
     // Vector de N individuos
     float population[N][T];
@@ -191,12 +263,18 @@ int main(){
     //Vector para punto de referencia (x,y)
     float pReference[2];
 
+    // Mejoramos la aleatoriedad de los rand()
+    srand(time(NULL));
+
+    /* INICIALIZACION */
     inicialiceAlphaVector(alpha_vector);
     inicialiceNeighbourVector(alpha_vector, neightbours);
     inicialicePopulation(population);
     evaluate_zdt3(population, evaluation, pReference);
 
-    printf("%f", pReference[0]);
+    /* OPERACIONES */
+    iteraciones(population, neightbours);
+
 
     return 0;
 }
