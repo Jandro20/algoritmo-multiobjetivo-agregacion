@@ -1,5 +1,38 @@
-#include "general.c"
-#include "aux.c"
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+// Poblacion
+int const N = 200;
+
+// Vecindad (%) 15% de la poblacion total (200*0.15)
+int const T = 30;
+
+// Generaciones
+int const G = 200;
+
+
+/*  FUNCIONES AUXILIARES    */
+int const PI = 3.14159265359;
+
+/*
+    Calculo de la distancia euclidea de dos puntos (x1, y1) y (x2,y2)
+*/
+float euclidea_distance(float p1[2], float p2[2]){
+    return (float) sqrt(pow((p2[0] - p1[0]), 2.0) + pow((p2[1] - p1[1]), 2.0));
+}
+
+/*
+    Funcion para comparacion y ordenacion de un array de elementos
+*/
+int comparation_function(const void * p1, const void * p2){
+    return ( *(int *)p1 - *(int *) p2);
+}
+
+/*  FUNCIONES PRINCIPALES   */
+
+/*  INICIALIZACION  */
 
 /* 
     Inicializamos vectores peso con vectores equiespacioados de forma euclidea
@@ -25,7 +58,7 @@ void inicialiceAlphaVector(float vector[N][2]){
 void inicialiceNeighbourVector(float vector[N][2], float neightbours[N][T]){
 
     // Array para obtener los T primeros valores del array.
-    float *vecinos = malloc(T * sizeof(float));
+    float *vecinos = (float *)malloc(T * sizeof(float));
 
     // Array auxiliar para no machacar valores
     float aux[N];
@@ -119,17 +152,51 @@ void evaluate_zdt3(float population[N][T], float evaluation[N][2], float pRefere
     
 }
 
+/*  ACCIONES POR ITERACION  */
+
+void iteraciones(float population[N][T], float neightbours[N][T]){
+    
+    // Realizamos G iteraciones x N subproblemas = G*N = 4000
+    for (int iteracion = 0; iteracion < G; iteracion++)
+    {
+        for (int subproblema = 0; subproblema < N; subproblema++)
+        {
+            /*REPRODUCCION*/
+
+            /*EVALUACION*/
+
+            /*ACTUALIZACION_PUNTO_REFERENCIA*/
+
+            /*ACTUALIZACION_VECINOS*/
+        }
+        
+    }
+    
+}
+
+/*  MAIN    */
 int main(){
-    alpha_vector[N][2];
-    neightbours[N][T];
-    population[N][T];
-    evaluation[N][2];
-    pReference[2];
+    // Vectores alpha
+    float alpha_vector[N][2];
+
+    // Vectores de los vecinos
+    float neightbours[N][T];
+
+    // Vector de N individuos
+    float population[N][T];
+
+    // Vector para evaluacion [individuos](f1,f2)
+    float evaluation[N][2];
+
+    //Vector para punto de referencia (x,y)
+    float pReference[2];
 
     inicialiceAlphaVector(alpha_vector);
     inicialiceNeighbourVector(alpha_vector, neightbours);
     inicialicePopulation(population);
     evaluate_zdt3(population, evaluation, pReference);
+
+    printf("%f", pReference[0]);
 
     return 0;
 }
