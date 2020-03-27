@@ -17,6 +17,9 @@ int const G = 200;
 /*  FUNCIONES AUXILIARES    */
 int const PI = 3.14159265359;
 
+// Valor random
+#define URAND	((double)rand()/((double)RAND_MAX + 1.0))
+
 /*
     Calculo de la distancia euclidea de dos puntos (x1, y1) y (x2,y2)
 */
@@ -64,7 +67,7 @@ void inicialiceAlphaVector(float vector[N][2]){
 */
 void inicialiceNeighbourVector(float vector[N][2], int neightbours[N][T]){
 
-    // Array auxiliar para no machacar valores
+    // Array auxiliar { [0]->indices - [1]-> valores distancia }
     float aux[N][2];
 
     // ELemento i -> Calcular distancia euclidea con todo valor j
@@ -78,7 +81,7 @@ void inicialiceNeighbourVector(float vector[N][2], int neightbours[N][T]){
             aux[j][0] = j; // Pnt al ser comparado
             aux[j][1] = euclidea_distance(vector[i], vector[j]);    // Distancia
         }
-        printf("- x = %f - y = %f - \n", vector[i][0], vector[i][1]);
+        //printf("- x = %f - y = %f - \n", vector[i][0], vector[i][1]);
 
         /* 
             Aplicamos ordenacion por bubble sort a las distancias desde el pnt i al resto.
@@ -102,12 +105,7 @@ void inicialiceNeighbourVector(float vector[N][2], int neightbours[N][T]){
         for (int pt = 0; pt < T; pt++)
         {
             neightbours[i][pt] = (int) aux[pt][0];
-            int indice = neightbours[i][pt];
-            printf("pt(%f , %f) - INDICE: %d -> %d = (%f , %f) \n",vector[i][0], vector[i][1], i, neightbours[i][pt], vector[indice][0], vector[indice][1]);
-
         }        
-        
-        printf("\n");
 
     }
     
@@ -183,6 +181,8 @@ void iteraciones(float population[N][T], int neightbours[N][T]){
     float F = 0.5;  //<- Mutacion
     float CR = 0.5; //<- Cruce
 
+    //Salida de la mutacion
+    float v[N][T];
 
     // Realizamos G iteraciones x N subproblemas = G*N = 4000
     for (int iteracion = 0; iteracion < G; iteracion++)
@@ -192,8 +192,6 @@ void iteraciones(float population[N][T], int neightbours[N][T]){
             /* REPRODUCCION */
             /* MUTACION Y CRUCE */
 
-            //Conjunto aleatorio
-            float vectoresEscogidos[3][T];
             //Seleccionamos un conjuntos aleatorio de indiviuos 
                 //Escogo los 3 vecinos de forma aleatoria
                 int r1, r2, r3;
@@ -211,28 +209,47 @@ void iteraciones(float population[N][T], int neightbours[N][T]){
                     r3 = (int)rand() % T;
                 } while( r3==subproblema || r3==r1 || r3==r2 );
 
+                //printf("%d -> %d - %d - %d \n", subproblema, r1, r2, r3);
 
+                //Inicializo los tres vectores con los que voy a trabajar
+                float xr1[T], xr2[T], xr3[T];
 
-                int aleatorio = 0;
-                for (int nE = 0; nE < 3; nE++)
+                /*
+                    OPERADOR DE CRUCE Y MUTACION
+                    - Si el valor URAND es menor al de cruce o el subproblema coincide con un valor calculado al azar
+                        - Aplico mutacion y añado a v
+                    - Sino
+                        - Añado el subproblema actual a v
+                */
+
+                int prand = (int) URAND*subproblema;                
+                
+
+                if (URAND < CR || subproblema == prand)
                 {
-                    aleatorio = rand() % T;
-                    for (int sub = 0; sub < T; sub++)
-                    {
-                        vectoresEscogidos[nE][sub] = neightbours[subproblema][sub];
+                    for (int t = 0; t < T; t++) {
+                        xr1[t] = population[r1][t];
+                        xr2[t] = population[r2][t];
+                        xr3[t] = population[r3][t];
+
+                        v[subproblema][t] = xr1[t] + F*(xr2[t] - xr3[t]);
+
+                        //Restrinjo los valores a los limites (0 < x < 1)
+                        if(v[subproblema][t] > 1) v[subproblema][t]=1;
+                        if(v[subproblema][t] < 0) v[subproblema][t]=0;
+
+                        //printf("%f %f %f = %f\n", xr1[t], xr2[t], xr3[t], v[subproblema][t]);
                     }
                 }
-                
-            // Aplicacion de operadores evolutivos.
-                //Operador de mutacion
-                //Resultado de la mutacion
-                float v_i[T];
-                
-                for (int mutation = 0; mutation < T; mutation++)
-                {
-                    v_i[T] = vectoresEscogidos[0][T] + F*(vectoresEscogidos[1][T] - vectoresEscogidos[2][T]);
+                else{
+                    for (int t = 0; t < T; t++) {
+                        v[subproblema][t] = population[subproblema][t];
+                    }
                 }
-                
+
+                //SE DA LA MUTACION EN TORNO AL 50% DE LA VECINDAD
+           
+            
 
 
             /* EVALUACION */
@@ -243,6 +260,8 @@ void iteraciones(float population[N][T], int neightbours[N][T]){
         }
         
     }
+
+    
     
 }
 
