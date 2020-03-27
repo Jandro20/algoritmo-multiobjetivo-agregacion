@@ -4,6 +4,9 @@
 #include <string.h>
 #include <time.h>
 
+#include <gnu-versions.h>
+# define GNUPLOT_COMMAND "gnuplot -persist"
+
 // Poblacion
 int const N = 200;
 
@@ -203,12 +206,12 @@ void evaluate_zdt3(float individuo[T], float evaluation[2], float pReference[2])
     
 }
 
-void evaluacionGTE(float y[T], float vPesos[2], float pReference[2], float res){
+float evaluacionGTE(float y[T], float vPesos[2], float pReference[2]){
     
     float f[2];
     float r[2];
 
-    float valor1, valor2;
+    float valor1, valor2, res;
 
     evaluate_zdt3(y, f, r);
 
@@ -217,11 +220,14 @@ void evaluacionGTE(float y[T], float vPesos[2], float pReference[2], float res){
 
     if(valor1 > valor2) res = valor1;
     else res = valor2;    
+
+
+    return res;
 }
 
 /*  ACCIONES POR ITERACION  */
 
-void iteraciones(float population[N][T], int neightbours[N][T], float pReferenceGlobal[2], float pesos[N][2], float mejorPunto[T]){
+void iteraciones(float population[N][T], int neightbours[N][T], float pReferenceGlobal[2], float pesos[N][2], float mejorPunto[T], FILE *p){
     
     //Operadores
     float F = 0.5;  //<- Mutacion
@@ -313,11 +319,11 @@ void iteraciones(float population[N][T], int neightbours[N][T], float pReference
 
             if(pReferenceGlobal[0]>pReferenceLocal[0]) {
                 pReferenceGlobal[0]=pReferenceLocal[0];
-                printf("Global en subproblema %d>  x: %f (%f) \n", subproblema, pReferenceGlobal[0], pReferenceLocal[0]);
+                //printf("Global en subproblema %d>  x: %f (%f) \n", subproblema, pReferenceGlobal[0], pReferenceLocal[0]);
             }
             if(pReferenceGlobal[1]>pReferenceLocal[1]) {
                 pReferenceGlobal[1]=pReferenceLocal[1];
-                printf("Global en subproblema %d>  y: %f (%f) \n", subproblema, pReferenceGlobal[1], pReferenceLocal[1]);
+                //printf("Global en subproblema %d>  y: %f (%f) \n", subproblema, pReferenceGlobal[1], pReferenceLocal[1]);
             }
             
             //printf("Local>  x: %f , y: %f \n", pReferenceLocal[0], pReferenceLocal[1]);
@@ -327,7 +333,9 @@ void iteraciones(float population[N][T], int neightbours[N][T], float pReference
 
             float valorIntermedio = 0.;
 
-            evaluacionGTE(v[subproblema], pesos[subproblema] , pReferenceGlobal, valorIntermedio);
+            valorIntermedio = evaluacionGTE(v[subproblema], pesos[subproblema] , pReferenceGlobal);
+
+            printf("%f", valorIntermedio);
 
             if(mejorValor <= valorIntermedio){
                 mejorValor=valorIntermedio;
@@ -337,14 +345,22 @@ void iteraciones(float population[N][T], int neightbours[N][T], float pReference
                 }
                 
             }
+
                 
         }
 
     }
 
+    for (int l = 0; l < T; l++)
+    {
+        fprintf(p, "%f \n", mejorPunto[l]);
+    }
+            
     
     
 }
+
+
 
 /*  MAIN    */
 int main(){
@@ -375,16 +391,25 @@ int main(){
     inicialicePopulation(population);
     evaluate_zdt3_all(population, evaluation, pReference);
 
-    /* OPERACIONES */
-    iteraciones(population, neightbours, pReference, alpha_vector, mejorPunto);
 
-    printf("GLOBAL ---->  x: %f , y: %f \n", pReference[0], pReference[1]);
-    printf("Mejores valores ");
-    for (int p = 0; p < T; p++)
+    char * commandsForGnuplot[] = {"set title \"TITLEEEEE\"", "plot 'data.temp' "};
+    FILE * temp = fopen("data.temp", "w");
+    FILE * gnuplotPipe = popen ("gnuplot -persistent", "w");
+    
+    
+    /* OPERACIONES */
+    iteraciones(population, neightbours, pReference, alpha_vector, mejorPunto, temp);
+
+
+    for (int i=0; i < 2; i++)
     {
-        printf("%f \n", mejorPunto[p]);
+        fprintf(gnuplotPipe, "%s \n", commandsForGnuplot[i]); //Send commands to gnuplot one by one.
     }
 
+
+
+
+    
 
     return 0;
 }
