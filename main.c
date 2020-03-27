@@ -133,7 +133,7 @@ void inicialicePopulation(float population[N][T]){
 /*
     Realizamos la evaluacion de la poblacion mediante las funciones de ZDT3
 */
-void evaluate_zdt3(float population[N][T], float evaluation[N][2], float pReference[2]){
+void evaluate_zdt3_all(float population[N][T], float evaluation[N][2], float pReference[2]){
 
     float tmp = 0.0;
 
@@ -173,9 +173,55 @@ void evaluate_zdt3(float population[N][T], float evaluation[N][2], float pRefere
     
 }
 
+/*
+    Realizamos la evaluacion de un individuo mediante las funciones de ZDT3
+*/
+void evaluate_zdt3(float individuo[T], float evaluation[2], float pReference[2]){
+
+    float tmp = 0.0;
+
+    float f1 = individuo[0];
+
+    //Realizo sumatorio
+    for (int j = 1; j < T; j++)
+    {
+        tmp += individuo[j];
+    }
+
+    float g = 1+((9*tmp)/(T-1));
+    float h = 1-sqrt(f1/g)-(f1/g)*sin(10*PI*f1);
+
+    float f2 = g*h;
+
+    // Guardamos la evaluacion para los individuos
+    evaluation[0] = f1;
+    evaluation[1] = f2;
+
+    // Almaceno los mejores valores de cada objetivo (funciones que minimizan)
+    pReference[0] = f1;
+    pReference[1] = f2;
+    
+}
+
+void evaluacionGTE(float y[T], float vPesos[2], float pReference[2], float res){
+    
+    float f[2];
+    float r[2];
+
+    float valor1, valor2;
+
+    evaluate_zdt3(y, f, r);
+
+    valor1 = vPesos[0] * abs( f[0] - pReference[0] );
+    valor2 = vPesos[1] * abs( f[1] - pReference[1] );
+
+    if(valor1 > valor2) res = valor1;
+    else res = valor2;    
+}
+
 /*  ACCIONES POR ITERACION  */
 
-void iteraciones(float population[N][T], int neightbours[N][T]){
+void iteraciones(float population[N][T], int neightbours[N][T], float pReferenceGlobal[2], float pesos[N][2], float mejorPunto[T]){
     
     //Operadores
     float F = 0.5;  //<- Mutacion
@@ -183,6 +229,14 @@ void iteraciones(float population[N][T], int neightbours[N][T]){
 
     //Salida de la mutacion
     float v[N][T];
+
+    //Salida de la evaluacion
+    float evaluation[2];
+    
+    //Puntos de referencia por evaluacion
+    float pReferenceLocal[2];
+
+    float mejorValor =0.;
 
     // Realizamos G iteraciones x N subproblemas = G*N = 4000
     for (int iteracion = 0; iteracion < G; iteracion++)
@@ -192,7 +246,7 @@ void iteraciones(float population[N][T], int neightbours[N][T]){
             /* REPRODUCCION */
             /* MUTACION Y CRUCE */
 
-            //Seleccionamos un conjuntos aleatorio de indiviuos 
+                //Seleccionamos un conjuntos aleatorio de indiviuos 
                 //Escogo los 3 vecinos de forma aleatoria
                 int r1, r2, r3;
 
@@ -249,16 +303,43 @@ void iteraciones(float population[N][T], int neightbours[N][T]){
 
                 //SE DA LA MUTACION EN TORNO AL 50% DE LA VECINDAD
            
-            
+                //MUTACION GAUSSIANA
 
+                                                   
 
             /* EVALUACION */
-
+                evaluate_zdt3(v[subproblema], evaluation, pReferenceLocal);
             /* ACTUALIZACION_PUNTO_REFERENCIA */
 
+            if(pReferenceGlobal[0]>pReferenceLocal[0]) {
+                pReferenceGlobal[0]=pReferenceLocal[0];
+                printf("Global en subproblema %d>  x: %f (%f) \n", subproblema, pReferenceGlobal[0], pReferenceLocal[0]);
+            }
+            if(pReferenceGlobal[1]>pReferenceLocal[1]) {
+                pReferenceGlobal[1]=pReferenceLocal[1];
+                printf("Global en subproblema %d>  y: %f (%f) \n", subproblema, pReferenceGlobal[1], pReferenceLocal[1]);
+            }
+            
+            //printf("Local>  x: %f , y: %f \n", pReferenceLocal[0], pReferenceLocal[1]);
+            //printf("Global en subproblema %d>  x: %f , y: %f \n", subproblema, pReferenceGlobal[0], pReferenceGlobal[1]);
+            
             /* ACTUALIZACION_VECINOS */
+
+            float valorIntermedio = 0.;
+
+            evaluacionGTE(v[subproblema], pesos[subproblema] , pReferenceGlobal, valorIntermedio);
+
+            if(mejorValor <= valorIntermedio){
+                mejorValor=valorIntermedio;
+                for (int l = 0; l < T; l++)
+                {
+                    mejorPunto[l]=v[subproblema][l];
+                }
+                
+            }
+                
         }
-        
+
     }
 
     
@@ -281,6 +362,9 @@ int main(){
 
     //Vector para punto de referencia (x,y)
     float pReference[2];
+    
+    //Resultado
+    float mejorPunto[T];
 
     // Mejoramos la aleatoriedad de los rand()
     srand(time(NULL));
@@ -289,10 +373,17 @@ int main(){
     inicialiceAlphaVector(alpha_vector);
     inicialiceNeighbourVector(alpha_vector, neightbours);
     inicialicePopulation(population);
-    evaluate_zdt3(population, evaluation, pReference);
+    evaluate_zdt3_all(population, evaluation, pReference);
 
     /* OPERACIONES */
-    iteraciones(population, neightbours);
+    iteraciones(population, neightbours, pReference, alpha_vector, mejorPunto);
+
+    printf("GLOBAL ---->  x: %f , y: %f \n", pReference[0], pReference[1]);
+    printf("Mejores valores ");
+    for (int p = 0; p < T; p++)
+    {
+        printf("%f \n", mejorPunto[p]);
+    }
 
 
     return 0;
