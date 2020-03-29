@@ -8,14 +8,13 @@
 # define GNUPLOT_COMMAND "gnuplot -persist"
 
 // Poblacion
-int const N = 1000;
+int const N = 100;
 
 // Vecindad (%) 15% de la poblacion total (200*0.15)
-int const T = 150;
+int const T = 15;
 
 // Generaciones
-int const G = 10;
-
+int const G = 100;
 
 /*  FUNCIONES AUXILIARES    */
 float const PI = 3.14159265359;
@@ -26,18 +25,21 @@ float const PI = 3.14159265359;
 /*
     Calculo de la distancia euclidea de dos puntos (x1, y1) y (x2,y2)
 */
-float euclidea_distance(float p1[2], float p2[2]){
+float euclidea_distance(float p1[2], float p2[2])
+{
     return (float) sqrt(pow((p2[0] - p1[0]), 2.0) + pow((p2[1] - p1[1]), 2.0));
 }
 
 /*
     Funcion para comparacion y ordenacion de un array de elementos
 */
-int comparation_function(const void * p1, const void * p2){
+int comparation_function(const void * p1, const void * p2)
+{
     return ( *(int *)p1 - *(int *) p2);
 }
 
-void swap(float *v1, float *v2){
+void swap(float *v1, float *v2)
+{
     float temp = *v1;
     *v1=*v2;
     *v2=temp;
@@ -163,7 +165,8 @@ void swap(float *v1, float *v2){
     Inicializamos vectores peso con vectores equiespacioados de forma euclidea
                     DONE DONE DONE DONE DONE
 */
-void inicialiceAlphaVector(float vector[N][2]){
+void inicialiceAlphaVector(float vector[N][2])
+{
 
     float paso = (float) 1/(N - 1);
 
@@ -183,7 +186,8 @@ void inicialiceAlphaVector(float vector[N][2]){
 
                 DONE DONE DONE DONE DONE
 */
-void inicialiceNeighbourVector(float vector[N][2], int neightbours[N][T]){
+void inicialiceNeighbourVector(float vector[N][2], int neightbours[N][T])
+{
 
 
     // ELemento i -> Calcular distancia euclidea con todo valor j
@@ -234,7 +238,8 @@ void inicialiceNeighbourVector(float vector[N][2], int neightbours[N][T]){
 
                 DONE DONE DONE DONE DONE
 */
-void inicialicePopulation(float population[N][T]){
+void inicialicePopulation(float population[N][T])
+{
     
     float range = 1.0;
 
@@ -255,7 +260,8 @@ void inicialicePopulation(float population[N][T]){
                     OBSERVAR
 
 */
-void evaluate_zdt3_all(float population[N][T], float evaluation[N][2], float pReference[2]){
+void evaluate_zdt3_all(float population[N][T], float evaluation[N][2], float pReference[2])
+{
 
     float tmp = 0.0;
 
@@ -298,7 +304,8 @@ void evaluate_zdt3_all(float population[N][T], float evaluation[N][2], float pRe
 /*
     Realizamos la evaluacion de un individuo mediante las funciones de ZDT3
 */
-void evaluate_zdt3(float individuo[T], float evaluation[2], float pReference[2]){
+void evaluate_zdt3(float individuo[T], float evaluation[2], float pReference[2])
+{
 
     float tmp = 0.0;
 
@@ -326,7 +333,8 @@ void evaluate_zdt3(float individuo[T], float evaluation[2], float pReference[2])
     
 }
 
-float evaluacionGTE(float individuo[T], float vPesos[2], float pReference[2]){
+float evaluacionGTE(float individuo[T], float vPesos[2], float pReference[2])
+{
     
     float f[2];
     float r[2];
@@ -352,93 +360,95 @@ float evaluacionGTE(float individuo[T], float vPesos[2], float pReference[2]){
 /*  ACCIONES POR ITERACION  */
 
 //TORNEO Y SELECCION
-    void cruce(float padre1[T], float padre2[T], float hijo[T], float hijo2[T]){
+    void cruce(float padre1[T], float padre2[T], float hijo[T], float hijo2[T])
+    {
 
-    double CR = 0.5;
+        double CR = 0.5;
 
-    double prand =  URAND;
-    double y1, y2, yl, yu;
-    double rand;
-    double c1, c2;
-    double alpha, beta, betaq;
-    int eta_c = 10;
+        double prand =  URAND;
+        double y1, y2, yl, yu;
+        double rand;
+        double c1, c2;
+        double alpha, beta, betaq;
+        // Indice de distribucion para el cruce
+        int eta_c = 10;
 
-    if(prand <= CR){
-        for (int i = 0; i < T; i++)
-        {
-            if (randomperc()<=0.5 )
+        if(prand <= CR){
+            for (int i = 0; i < T; i++)
             {
-                if (fabs(padre1[i]-padre2[i]) > 1.0e-14)
+                if (randomperc()<=0.5 )
                 {
-                    if(padre1[i] < padre2[i])
+                    if (fabs(padre1[i]-padre2[i]) > 1.0e-14)
                     {
-                        y1 = padre1[i];
-                        y2 = padre2[i];
-                    }else
-                    {
-                        y1 = padre2[i];
-                        y2 = padre1[i];
-                    }
+                        if(padre1[i] < padre2[i])
+                        {
+                            y1 = padre1[i];
+                            y2 = padre2[i];
+                        }else
+                        {
+                            y1 = padre2[i];
+                            y2 = padre1[i];
+                        }
 
-                    yl = 1.0;
-                    yu = 0.0;
+                        yl = 1.0;
+                        yu = 0.0;
 
-                    rand = randomperc();
-                    beta = 1.0 + (.0)*(y1-yl)/(y2-y1);
-                    alpha = 2.0 - pow(beta,-(eta_c+1.0)); 
-                    if (rand <= (1.0/alpha))
-                    {
-                        betaq = pow ((rand*alpha),(1.0/(eta_c+1.0)));
-                    }
-                    else{
-                        betaq = pow ((1.0/(2.0 - rand*alpha)),(1.0/(eta_c+1.0)));
-                    }
-                    c2 = 0.5*((y1+y2)+betaq*(y2-y1));
-                    if (c1<yl)
-                        c1=yl;
-                    if (c2<yl)
-                        c2=yl;
-                    if (c1>yu)
-                        c1=yu;
-                    if (c2>yu)
-                        c2=yu;
-                    if (randomperc()<=0.5){
-                        hijo[i] = c1;
-                        hijo2[i]= c2;
-                    }   
+                        rand = randomperc();
+                        beta = 1.0 + (.0)*(y1-yl)/(y2-y1);
+                        alpha = 2.0 - pow(beta,-(eta_c+1.0)); 
+                        if (rand <= (1.0/alpha))
+                        {
+                            betaq = pow ((rand*alpha),(1.0/(eta_c+1.0)));
+                        }
+                        else{
+                            betaq = pow ((1.0/(2.0 - rand*alpha)),(1.0/(eta_c+1.0)));
+                        }
+                        c2 = 0.5*((y1+y2)+betaq*(y2-y1));
+                        if (c1<yl)
+                            c1=yl;
+                        if (c2<yl)
+                            c2=yl;
+                        if (c1>yu)
+                            c1=yu;
+                        if (c2>yu)
+                            c2=yu;
+                        if (randomperc()<=0.5){
+                            hijo[i] = c1;
+                            hijo2[i]= c2;
+                        }   
+                        else
+                        {
+                            hijo[i] = c2;
+                            hijo2[i] = c1;
+                        }
+                        }
                     else
                     {
-                        hijo[i] = c2;
-                        hijo2[i] = c1;
+                        hijo[i] = padre1[i];
+                        hijo2[i] = padre2[i];
                     }
                     }
-                else
+                    else
+                    {
+                        hijo[i] = padre2[i];
+                        hijo2[i] = padre1[i];
+                    }
+                }
+            }
+            else
+            {
+                for (int i=0; i<T; i++)
                 {
                     hijo[i] = padre1[i];
                     hijo2[i] = padre2[i];
                 }
-                }
-                else
-                {
-                    hijo[i] = padre2[i];
-                    hijo2[i] = padre1[i];
-                }
             }
-        }
-        else
-        {
-            for (int i=0; i<T; i++)
-            {
-                hijo[i] = padre1[i];
-                hijo2[i] = padre2[i];
-            }
-        }
 
     }
 /* Routine for binary tournament */
     void tournament (float individuo1[T], float individuo2[T], float parent[T])
     {
-        if ((randomperc()) <= 0.8)
+        if ((randomperc()) <= 0.5)
         {
             for (int i = 0; i < T; i++)
             {
@@ -484,14 +494,44 @@ float evaluacionGTE(float individuo[T], float vPesos[2], float pReference[2]){
         for (i=0; i<popsize; i+=4)
         {
             tournament (OldPopulation[i], OldPopulation[i+1], parent1);
-            tournament (OldPopulation[i+2], OldPopulation[i+3], parent1);
+            tournament (OldPopulation[i+2], OldPopulation[i+3], parent2);
             cruce (parent1, parent2, NewPopulation[i], NewPopulation[i+1]);
             tournament (OldPopulation[i], OldPopulation[i+1], parent1);
-            tournament (OldPopulation[i+2], OldPopulation[i+3], parent1);
+            tournament (OldPopulation[i+2], OldPopulation[i+3], parent2);
             cruce (parent1, parent2, NewPopulation[i+2], NewPopulation[i+3]);
         }
         free (a1);
         free (a2);
+        return;
+    }
+
+/* Routine to copy an individual 'ind1' into another individual 'ind2' */
+    void copy_ind (float individuo1[T], float individuo2[T])
+    {
+        int i, j;
+        if (T !=0)
+        {
+            for (i=0; i<T; i++)
+            {
+                individuo2[i] = individuo1[i];
+            }
+        }
+        return;
+    }
+
+    /* Routine to merge two populations into one */
+    void merge(float OldPopulation1[N][T], float OldPopulation2[N][T], float NewPopulation[N][T])
+    {
+        int popsize = N;
+        int i, k;
+        for (i=0; i<popsize; i++)
+        {
+            copy_ind (OldPopulation1[i], NewPopulation[i]);
+        }
+        for (i=0, k=popsize; i<popsize; i++, k++)
+        {
+            copy_ind (OldPopulation2[i], NewPopulation[i]);
+        }
         return;
     }
 
@@ -501,8 +541,8 @@ void iteraciones(float population[N][T], float population2[N][T], int neightbour
     // DEFINICION DE VARIABLES LOCALES
         //Operadores
         //ORIGINAL 0.5 ambos
-        float F = 0.5;  //<- Mutacion
-        float CR = 0.5; //<- Cruce
+        float F = 0.8;  //<- Mutacion
+        float CR = 0.6; //<- Cruce
 
         //Salida de la mutacion
         float mutation[N][T];
@@ -518,13 +558,15 @@ void iteraciones(float population[N][T], float population2[N][T], int neightbour
     // Realizamos G iteraciones x N subproblemas = G*N = 4000 or 10000
     for (int iteracion = 0; iteracion < G; iteracion++)
     {
+
+        
         for (int subproblema = 0; subproblema < N; subproblema++)
         {
+            selection(population, population2);
             /* REPRODUCCION */
             /* MUTACION Y CRUCE */
 
                 // CRUCE
-                selection(population, population2);
 
                 //  MUTACION
                 //Seleccionamos un conjuntos aleatorio de indiviuos 
@@ -623,7 +665,8 @@ void iteraciones(float population[N][T], float population2[N][T], int neightbour
                         }
                     }
                 }
-            fprintf(p, "%1.3f %1.3f %f \n", evaluation[0], evaluation[1], 0.0);
+
+            fprintf(p, "%1.3f %1.3f %f \n", evaluation[0], evaluation[1], 1.0);
         }
     }
 }
