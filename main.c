@@ -14,7 +14,7 @@ int const N = 100;
 int const T = 15;
 
 // Generaciones
-int const G = 100;
+int const G = 40;
 
 /*  FUNCIONES AUXILIARES    */
 float const PI = 3.14159265359;
@@ -163,7 +163,6 @@ void swap(float *v1, float *v2)
 
 /* 
     Inicializamos vectores peso con vectores equiespacioados de forma euclidea
-                    DONE DONE DONE DONE DONE
 */
 void inicialiceAlphaVector(float vector[N][2])
 {
@@ -183,8 +182,6 @@ void inicialiceAlphaVector(float vector[N][2])
 
 /*
     Realizamos la vecindad de cada vector, con sus T-1 vecinos (vector incluido)
-
-                DONE DONE DONE DONE DONE
 */
 void inicialiceNeighbourVector(float vector[N][2], int neightbours[N][T])
 {
@@ -235,8 +232,6 @@ void inicialiceNeighbourVector(float vector[N][2], int neightbours[N][T])
 /*
     Inicializamos una poblacion de N individuos (cada uno con T dimensiones)
     en un rango de 0 <= xi <= range
-
-                DONE DONE DONE DONE DONE
 */
 void inicialicePopulation(float population[N][T])
 {
@@ -256,9 +251,6 @@ void inicialicePopulation(float population[N][T])
 
 /*
     Realizamos la evaluacion de la poblacion mediante las funciones de ZDT3
-
-                    OBSERVAR
-
 */
 void evaluate_zdt3_all(float population[N][T], float evaluation[N][2], float pReference[2])
 {
@@ -363,7 +355,7 @@ float evaluacionGTE(float individuo[T], float vPesos[2], float pReference[2])
     void cruce(float padre1[T], float padre2[T], float hijo[T], float hijo2[T])
     {
 
-        double CR = 0.5;
+        double CR = 0.7;
 
         double prand =  URAND;
         double y1, y2, yl, yu;
@@ -541,8 +533,8 @@ void iteraciones(float population[N][T], float population2[N][T], int neightbour
     // DEFINICION DE VARIABLES LOCALES
         //Operadores
         //ORIGINAL 0.5 ambos
-        float F = 0.8;  //<- Mutacion
-        float CR = 0.6; //<- Cruce
+        float F = 0.75;  //<- Mutacion
+        float CR = 0.8; //<- Cruce
 
         //Salida de la mutacion
         float mutation[N][T];
@@ -559,10 +551,12 @@ void iteraciones(float population[N][T], float population2[N][T], int neightbour
     for (int iteracion = 0; iteracion < G; iteracion++)
     {
 
+        selection(population, population2);
         
         for (int subproblema = 0; subproblema < N; subproblema++)
         {
-            selection(population, population2);
+            
+            
             /* REPRODUCCION */
             /* MUTACION Y CRUCE */
 
@@ -645,6 +639,7 @@ void iteraciones(float population[N][T], float population2[N][T], int neightbour
                 //Valor del individuo actual
                 float valorActual = evaluacionGTE(mutation[subproblema], pesos[subproblema], pReferenceGlobal);
                 float valorVecino = 0.;
+                int mejor = 0;
 
                 float vecinoActual[T];
                 //Calculamos valores para los vecinos del individuo
@@ -657,16 +652,18 @@ void iteraciones(float population[N][T], float population2[N][T], int neightbour
 
                     valorVecino = evaluacionGTE(vecinoActual, pesos[subproblema], pReferenceGlobal);
                     
-                    if (valorActual <= valorVecino){
+                    if (valorActual >= valorVecino){
+                        mejor = 1;
                         //Sustituimos al vecino por la mejor solucion hasta el momento
-                        for (int p = 0; p < T; p++)
-                        {
-                            population2[neightbours[subproblema][vecino]][p] = mutation[subproblema][p];
-                        }
+                        
+                        population2[subproblema][neightbours[subproblema][vecino]] = mutation[subproblema][vecino];
+                        
                     }
                 }
 
-            fprintf(p, "%1.3f %1.3f %f \n", evaluation[0], evaluation[1], 1.0);
+                printf("valor actual: %f - valor nuevo: %f - mejor? = %d\n", valorActual, valorVecino, mejor);
+
+            fprintf(p, "%1.3f %1.3f %f \n", evaluation[0], evaluation[1], 0.0);
         }
     }
 }
