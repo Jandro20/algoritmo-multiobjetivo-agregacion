@@ -8,16 +8,21 @@
 # define GNUPLOT_COMMAND "gnuplot -persist"
 
 // Poblacion
-int const N = 100;
+int const N = 200;
 
 // Vecindad (%) 15% de la poblacion total (200*0.15)
-int const T = 15;
+int const T = 30;
+
+//Espacio de busqueda
+int const EB = 30;
 
 // Generaciones
-int const G = 40;
+int const G = 50;
 
 /*  FUNCIONES AUXILIARES    */
 float const PI = 3.14159265359;
+
+float const e =  2.7182;
 
 // Valor random
 #define URAND	((double)rand()/((double)RAND_MAX + 1.0))
@@ -154,9 +159,6 @@ void swap(float *v1, float *v2)
 
 
 
-
-
-
 /*  FUNCIONES PRINCIPALES   */
 
 /*  INICIALIZACION  */
@@ -233,14 +235,14 @@ void inicialiceNeighbourVector(float vector[N][2], int neightbours[N][T])
     Inicializamos una poblacion de N individuos (cada uno con T dimensiones)
     en un rango de 0 <= xi <= range
 */
-void inicialicePopulation(float population[N][T])
+void inicialicePopulation(float population[N][EB])
 {
     
     float range = 1.0;
 
     for (int i = 0; i < N; i++)
     {
-        for (int j = 0; j < T; j++)
+        for (int j = 0; j < EB; j++)
         {
             population[i][j] = (float)rand()/(float)(RAND_MAX/range);
         }
@@ -252,7 +254,7 @@ void inicialicePopulation(float population[N][T])
 /*
     Realizamos la evaluacion de la poblacion mediante las funciones de ZDT3
 */
-void evaluate_zdt3_all(float population[N][T], float evaluation[N][2], float pReference[2])
+void evaluate_zdt3_all(float population[N][EB], float evaluation[N][2], float pReference[2])
 {
 
     float tmp = 0.0;
@@ -268,12 +270,12 @@ void evaluate_zdt3_all(float population[N][T], float evaluation[N][2], float pRe
         tmp = 0.0;
 
         //Realizo sumatorio
-        for (int j = 1; j < T; j++)
+        for (int j = 1; j < EB; j++)
         {
             tmp += population[individuo][j];
         }
 
-        float g = 1+((9*tmp)/(T-1));
+        float g = 1+((9*tmp)/(EB-1));
         float h = 1-sqrt(f1/g)-(f1/g)*sin(10*PI*f1);
 
         float f2 = g*h;
@@ -296,7 +298,7 @@ void evaluate_zdt3_all(float population[N][T], float evaluation[N][2], float pRe
 /*
     Realizamos la evaluacion de un individuo mediante las funciones de ZDT3
 */
-void evaluate_zdt3(float individuo[T], float evaluation[2], float pReference[2])
+void evaluate_zdt3(float individuo[EB], float evaluation[2], float pReference[2])
 {
 
     float tmp = 0.0;
@@ -304,12 +306,12 @@ void evaluate_zdt3(float individuo[T], float evaluation[2], float pReference[2])
     float f1 = individuo[0];
 
     //Realizo sumatorio
-    for (int j = 1; j < T; j++)
+    for (int j = 1; j < EB; j++)
     {
         tmp += individuo[j];
     }
 
-    float g = 1+((9*tmp)/(T-1));
+    float g = 1+((9*tmp)/(EB-1));
     float h = 1-sqrt(f1/g)-(f1/g)*sin(10*PI*f1);
 
     float f2 = g*h;
@@ -325,7 +327,7 @@ void evaluate_zdt3(float individuo[T], float evaluation[2], float pReference[2])
     
 }
 
-float evaluacionGTE(float individuo[T], float vPesos[2], float pReference[2])
+float evaluacionGTE(float individuo[EB], float vPesos[2], float pReference[2])
 {
     
     float f[2];
@@ -352,7 +354,7 @@ float evaluacionGTE(float individuo[T], float vPesos[2], float pReference[2])
 /*  ACCIONES POR ITERACION  */
 
 //TORNEO Y SELECCION
-    void cruce(float padre1[T], float padre2[T], float hijo[T], float hijo2[T])
+    void cruce(float padre1[EB], float padre2[EB], float hijo[EB], float hijo2[EB])
     {
 
         double CR = 0.7;
@@ -366,7 +368,7 @@ float evaluacionGTE(float individuo[T], float vPesos[2], float pReference[2])
         int eta_c = 10;
 
         if(prand <= CR){
-            for (int i = 0; i < T; i++)
+            for (int i = 0; i < EB; i++)
             {
                 if (randomperc()<=0.5 )
                 {
@@ -429,7 +431,7 @@ float evaluacionGTE(float individuo[T], float vPesos[2], float pReference[2])
             }
             else
             {
-                for (int i=0; i<T; i++)
+                for (int i=0; i<EB; i++)
                 {
                     hijo[i] = padre1[i];
                     hijo2[i] = padre2[i];
@@ -438,11 +440,11 @@ float evaluacionGTE(float individuo[T], float vPesos[2], float pReference[2])
 
     }
 /* Routine for binary tournament */
-    void tournament (float individuo1[T], float individuo2[T], float parent[T])
+    void tournament (float individuo1[EB], float individuo2[EB], float parent[EB])
     {
         if ((randomperc()) <= 0.5)
         {
-            for (int i = 0; i < T; i++)
+            for (int i = 0; i < EB; i++)
             {
                 parent[i] = individuo1[i];
             }
@@ -450,7 +452,7 @@ float evaluacionGTE(float individuo[T], float vPesos[2], float pReference[2])
         }
         else
         {
-            for (int i = 0; i < T; i++)
+            for (int i = 0; i < EB; i++)
             {
                 parent[i] = individuo2[i];
             }
@@ -458,14 +460,14 @@ float evaluacionGTE(float individuo[T], float vPesos[2], float pReference[2])
         }
     }
 
-    void selection (float OldPopulation[N][T], float NewPopulation[N][T])
+    void selection (float OldPopulation[N][EB], float NewPopulation[N][EB])
     {
         int popsize = N;
         int *a1, *a2;
         int temp;
         int i;
         int rand;
-        float parent1[T], parent2[T];
+        float parent1[EB], parent2[EB];
         a1 = (int *)malloc(popsize*sizeof(int));
         a2 = (int *)malloc(popsize*sizeof(int));
         for (i=0; i<popsize; i++)
@@ -498,12 +500,12 @@ float evaluacionGTE(float individuo[T], float vPesos[2], float pReference[2])
     }
 
 /* Routine to copy an individual 'ind1' into another individual 'ind2' */
-    void copy_ind (float individuo1[T], float individuo2[T])
+    void copy_ind (float individuo1[EB], float individuo2[EB])
     {
         int i, j;
         if (T !=0)
         {
-            for (i=0; i<T; i++)
+            for (i=0; i<EB; i++)
             {
                 individuo2[i] = individuo1[i];
             }
@@ -512,7 +514,7 @@ float evaluacionGTE(float individuo[T], float vPesos[2], float pReference[2])
     }
 
     /* Routine to merge two populations into one */
-    void merge(float OldPopulation1[N][T], float OldPopulation2[N][T], float NewPopulation[N][T])
+    void merge(float OldPopulation1[N][EB], float OldPopulation2[N][EB], float NewPopulation[N][EB])
     {
         int popsize = N;
         int i, k;
@@ -528,16 +530,16 @@ float evaluacionGTE(float individuo[T], float vPesos[2], float pReference[2])
     }
 
 
-void iteraciones(float population[N][T], float population2[N][T], int neightbours[N][T], float pReferenceGlobal[2], float pesos[N][2], float mejorPunto[T], FILE *p){
+void iteraciones(float population[N][EB], float population2[N][EB], int neightbours[N][T], float pReferenceGlobal[2], float pesos[N][2], FILE *p, FILE *p2){
     
     // DEFINICION DE VARIABLES LOCALES
         //Operadores
         //ORIGINAL 0.5 ambos
-        float F = 0.75;  //<- Mutacion
-        float CR = 0.8; //<- Cruce
+        float F = 0.5;  //<- Mutacion
+        float CR = 0.5; //<- Cruce
 
         //Salida de la mutacion
-        float mutation[N][T];
+        float mutation[EB];
 
         //Salida de la evaluacion
         float evaluation[2];
@@ -545,11 +547,23 @@ void iteraciones(float population[N][T], float population2[N][T], int neightbour
         //Puntos de referencia por evaluacion
         float pReferenceLocal[2];
 
-        float mejorValor =0.;
+        float T_j = (30.-1.)/20.;
+        float PR = 1./30.;
 
     // Realizamos G iteraciones x N subproblemas = G*N = 4000 or 10000
     for (int iteracion = 0; iteracion < G; iteracion++)
     {
+
+        for (int i = 0; i < N; i++)
+        {
+            for (int j = 0; j < EB; j++)
+            {
+                fprintf(p2, "%f ", population2[i][j]);
+            }
+            fprintf(p2, "\n");
+        }
+        fprintf(p2, "\n");
+        
 
         selection(population, population2);
         
@@ -583,7 +597,7 @@ void iteraciones(float population[N][T], float population2[N][T], int neightbour
                 //printf("%d -> %d - %d - %d \n", subproblema, r1, r2, r3);
 
                 //Inicializo los tres vectores con los que voy a trabajar
-                float xr1[T], xr2[T], xr3[T];
+                float xr1[EB], xr2[EB], xr3[EB];
 
                 /*
                     OPERADOR DE CRUCE Y MUTACION
@@ -598,30 +612,41 @@ void iteraciones(float population[N][T], float population2[N][T], int neightbour
 
                 if (URAND < CR || subproblema == prand)
                 {
-                    for (int t = 0; t < T; t++) {
-                        xr1[t] = population2[r1][t];
-                        xr2[t] = population2[r2][t];
-                        xr3[t] = population2[r3][t];
+                    for (int t = 0; t < EB; t++) {
+                        xr1[t] = population2[neightbours[subproblema][r1]][t];
+                        xr2[t] = population2[neightbours[subproblema][r2]][t];
+                        xr3[t] = population2[neightbours[subproblema][r3]][t];
 
-                        mutation[subproblema][t] = xr1[t] + F*(xr2[t] - xr3[t]);
+                        mutation[t] = xr1[t] + F*(xr3[t] - xr2[t]);
 
                         //Restrinjo los valores a los limites (0 < x < 1)
-                        if(mutation[subproblema][t] > 1) mutation[subproblema][t]=1;
-                        if(mutation[subproblema][t] < 0) mutation[subproblema][t]=0;
+                        if(mutation[t] > 1) mutation[t]=1;
+                        if(mutation[t] < 0) mutation[t]=0;
 
                         //printf("%f %f %f = %f\n", xr1[t], xr2[t], xr3[t], v[subproblema][t]);
                     }
                 }
                 else{
                     for (int t = 0; t < T; t++) {
-                        mutation[subproblema][t] = population2[subproblema][t];
+                        mutation[t] = population2[subproblema][t];
                     }
                 }       
 
                 //SE DA LA MUTACION EN TORNO AL 50% DE LA VECINDAD
 
+
+                float ran = URAND;
+                if(ran < PR){
+                    for (int eb = 0; eb < EB; eb++)
+                    {
+                        mutation[eb] = mutation[eb] + (float)((1/(sqrt(2*PI)*T_j))*pow(e, -((pow(mutation[eb],2)/2*pow(T_j, 2)))));
+                    }               
+                }
+                
+
+
             /* EVALUACION */
-                evaluate_zdt3(mutation[subproblema], evaluation, pReferenceLocal);
+                evaluate_zdt3(mutation, evaluation, pReferenceLocal);
             /* ACTUALIZACION_PUNTO_REFERENCIA */
                 
                 if(pReferenceGlobal[0]>pReferenceLocal[0]) {
@@ -637,15 +662,15 @@ void iteraciones(float population[N][T], float population2[N][T], int neightbour
             /* ACTUALIZACION_VECINOS */
 
                 //Valor del individuo actual
-                float valorActual = evaluacionGTE(mutation[subproblema], pesos[subproblema], pReferenceGlobal);
+                float valorActual = evaluacionGTE(mutation, pesos[subproblema], pReferenceGlobal);
                 float valorVecino = 0.;
                 int mejor = 0;
 
-                float vecinoActual[T];
+                float vecinoActual[EB];
                 //Calculamos valores para los vecinos del individuo
-                for (int vecino = 0; vecino < T; vecino++)
+                for (int vecino = 0; vecino < EB; vecino++)
                 {
-                    for (int p = 0; p < T; p++)
+                    for (int p = 0; p < EB; p++)
                     {
                         vecinoActual[p] = population2[neightbours[subproblema][vecino]][p];
                     }
@@ -656,12 +681,12 @@ void iteraciones(float population[N][T], float population2[N][T], int neightbour
                         mejor = 1;
                         //Sustituimos al vecino por la mejor solucion hasta el momento
                         
-                        population2[subproblema][neightbours[subproblema][vecino]] = mutation[subproblema][vecino];
+                        population2[subproblema][neightbours[subproblema][vecino]] = mutation[vecino];
                         
                     }
                 }
 
-                printf("valor actual: %f - valor nuevo: %f - mejor? = %d\n", valorActual, valorVecino, mejor);
+                //printf("valor actual: %f - valor nuevo: %f - mejor? = %d\n", valorActual, valorVecino, mejor);
 
             fprintf(p, "%1.3f %1.3f %f \n", evaluation[0], evaluation[1], 0.0);
         }
@@ -674,10 +699,10 @@ int main(){
     float alpha_vector[N][2];
 
     // Vectores de los vecinos
-    int neightbours[N][T];
+    int neightbours[N][EB];
 
     // Vector de N individuos
-    float population[N][T];
+    float population[N][EB];
     float population2[N][T];
 
     // Vector para evaluacion [individuos](f1,f2)
@@ -686,8 +711,6 @@ int main(){
     //Vector para punto de referencia (x,y)
     float pReference[2];
     
-    //Resultado
-    float mejorPunto[T];
 
     // Mejoramos la aleatoriedad de los rand()
     srand(time(NULL));
@@ -701,13 +724,14 @@ int main(){
     
     evaluate_zdt3_all(population, evaluation, pReference);
 
-    char * commandsForGnuplot[] = {"set title \"TITLE\"", "set yrange [-1:6]", "plot 'data.temp'"};
+    char * commandsForGnuplot[] = {"set title \"TITLE\"", "set yrange [-1:6]", "plot 'soluciones.temp'"};
     FILE * gnuplotPipe = popen ("gnuplot -persistent", "w");
-    FILE * temp = fopen("data.temp", "w");
+    FILE * temp = fopen("soluciones.temp", "w");
+    FILE * temp2 = fopen("individuos.temp", "w");
     
     
     /* OPERACIONES */
-    iteraciones(population,population2, neightbours, pReference, alpha_vector, mejorPunto, temp);
+    iteraciones(population,population2, neightbours, pReference, alpha_vector, temp, temp2);
 
     //fprintf(temp, "%1.3f %1.3f \n", pReference[0], pReference[1]);
 
