@@ -5,26 +5,34 @@
 #include <time.h>
 
 #include <gnu-versions.h>
+
+
 # define GNUPLOT_COMMAND "gnuplot -persist"
 
 typedef FILE * Fichero;
 
 // Poblacion
-int const N = 200;
+int const N = 100;
 
 // Vecindad (%) 20% de la poblacion total (200*0.15)
-int const T = 30;
+int const T = 20;
 
 //Espacio de busqueda
 int const EB = 30;
 
 // Generaciones
-int const G = 200;
+int const G = 100;
 
 /*  FUNCIONES AUXILIARES    */
 float const PI = 3.14159265359;
 
 float const e =  2.7182;
+
+float const F = 0.5;
+float const CR = 0.5;
+
+//mandar abajo al terminar
+char * commandsForGnuplot2[] = {"set title \"Todas las generaciones\"", "set yrange [-0.8:1]", "plot 'soluciones.temp', 'all_popm_seed9.out'"};
 
 // Valor random
 #define URAND	((double)rand()/((double)RAND_MAX + 1.0))
@@ -161,9 +169,6 @@ void swap(float *v1, float *v2)
 
 
 
-/*  FUNCIONES PRINCIPALES   */
-
-/*  INICIALIZACION  */
 
 /* 
     Inicializamos vectores peso con vectores equiespacioados de forma euclidea
@@ -242,7 +247,6 @@ void inicialiceNeighbourVector(float vector[N][2], int neightbours[N][T])
 */
 void inicialicePopulation(float population[N][EB])
 {
-    
     float range = 1.0;
 
     for (int i = 0; i < N; i++)
@@ -251,9 +255,7 @@ void inicialicePopulation(float population[N][EB])
         {
             population[i][j] = (float)rand()/(float)(RAND_MAX/range);
         }
-
     }
-    
 }
 
 /*
@@ -261,7 +263,6 @@ void inicialicePopulation(float population[N][EB])
 */
 void evaluate_zdt3_all(float population[N][EB], float evaluation[N][2], float pReference[2])
 {
-
     float tmp = 0.0;
 
     float bestX = 1000000.0;
@@ -306,19 +307,28 @@ void evaluate_zdt3(float individuo[EB], float evaluation[2], float pReference[2]
 {
 
     float tmp = 0.0;
+    float g,h,f1, f2;
 
-    float f1 = individuo[0];
+    f1 = individuo[0];
 
     //Realizo sumatorio
-    for (int j = 1; j < EB; j++)
+    for (int eb = 1; eb < EB; eb++)
     {
-        tmp += individuo[j];
+        tmp += individuo[eb];
     }
 
-    float g = 1+((9*tmp)/(EB-1));
-    float h = 1-sqrt(f1/g)-(f1/g)*sin(10*PI*f1);
+    g = 1+((9*tmp)/(EB-1));
+    h = 1-sqrt(f1/g)-(individuo[0]/g)*sin(10*PI*individuo[0]);
 
-    float f2 = g*h;
+    f2 = g*h;
+
+    /* if(isnan(f1) || isnan(f2)){
+        for (int i = 0; i < EB; i++)
+        {
+            printf("%f \n", individuo[i]);
+        }
+        printf("\n");
+    } */
 
     // Guardamos la evaluacion para el individuo
     evaluation[0] = f1;
@@ -341,8 +351,12 @@ float evaluacionGTE(float individuo[EB], float vPesos[2], float pReference[2])
 
     evaluate_zdt3(individuo, f, r);
 
-    valor1 = vPesos[0] * (float) fabs( f[0] - pReference[0] );
-    valor2 = vPesos[1] * (float) fabs( f[1] - pReference[1] );
+    valor1 = vPesos[0] * (float) fabsf( f[0] - pReference[0] );
+    valor2 = vPesos[1] * (float) fabsf( f[1] - pReference[1] );
+
+    //printf("v2: %f * (%f - %f) \n", vPesos[1], f[1], pReference[1]);
+
+    //printf("gte: valor1 %f valor2 %f \n", valor1, valor2);
 
     if(valor1 >= valor2){
         res = valor1;
@@ -355,221 +369,90 @@ float evaluacionGTE(float individuo[EB], float vPesos[2], float pReference[2])
 
 /*  ACCIONES POR ITERACION  */
 
-//TORNEO Y SELECCION
-    void cruce(float padre1[EB], float padre2[EB], float hijo[EB], float hijo2[EB])
-    {
 
-        double CR = 0.7;
-
-        double prand =  URAND;
-        double y1, y2, yl, yu;
-        double rand;
-        double c1, c2;
-        double alpha, beta, betaq;
-        // Indice de distribucion para el cruce
-        int eta_c = 10;
-
-        if(prand <= CR){
-            for (int i = 0; i < EB; i++)
-            {
-                if (randomperc()<=0.5 )
-                {
-                    if (fabs(padre1[i]-padre2[i]) > 1.0e-14)
-                    {
-                        if(padre1[i] < padre2[i])
-                        {
-                            y1 = padre1[i];
-                            y2 = padre2[i];
-                        }else
-                        {
-                            y1 = padre2[i];
-                            y2 = padre1[i];
-                        }
-
-                        yl = 1.0;
-                        yu = 0.0;
-
-                        rand = randomperc();
-                        beta = 1.0 + (.0)*(y1-yl)/(y2-y1);
-                        alpha = 2.0 - pow(beta,-(eta_c+1.0)); 
-                        if (rand <= (1.0/alpha))
-                        {
-                            betaq = pow ((rand*alpha),(1.0/(eta_c+1.0)));
-                        }
-                        else{
-                            betaq = pow ((1.0/(2.0 - rand*alpha)),(1.0/(eta_c+1.0)));
-                        }
-                        c2 = 0.5*((y1+y2)+betaq*(y2-y1));
-                        if (c1<yl)
-                            c1=yl;
-                        if (c2<yl)
-                            c2=yl;
-                        if (c1>yu)
-                            c1=yu;
-                        if (c2>yu)
-                            c2=yu;
-                        if (randomperc()<=0.5){
-                            hijo[i] = c1;
-                            hijo2[i]= c2;
-                        }   
-                        else
-                        {
-                            hijo[i] = c2;
-                            hijo2[i] = c1;
-                        }
-                        }
-                    else
-                    {
-                        hijo[i] = padre1[i];
-                        hijo2[i] = padre2[i];
-                    }
-                    }
-                    else
-                    {
-                        hijo[i] = padre2[i];
-                        hijo2[i] = padre1[i];
-                    }
-                }
-            }
-            else
-            {
-                for (int i=0; i<EB; i++)
-                {
-                    hijo[i] = padre1[i];
-                    hijo2[i] = padre2[i];
-                }
-            }
-
-    }
-/* Routine for binary tournament */
-    void tournament (float individuo1[EB], float individuo2[EB], float parent[EB])
-    {
-        if ((randomperc()) <= 0.5)
-        {
-            for (int i = 0; i < EB; i++)
-            {
-                parent[i] = individuo1[i];
-            }
-            
-        }
-        else
-        {
-            for (int i = 0; i < EB; i++)
-            {
-                parent[i] = individuo2[i];
-            }
-            
-        }
-    }
-
-    void selection (float OldPopulation[N][EB], float NewPopulation[N][EB])
-    {
-        int popsize = N;
-        int *a1, *a2;
-        int temp;
-        int i;
-        int rand;
-        float parent1[EB], parent2[EB];
-        a1 = (int *)malloc(popsize*sizeof(int));
-        a2 = (int *)malloc(popsize*sizeof(int));
-        for (i=0; i<popsize; i++)
-        {
-            a1[i] = a2[i] = i;
-        }
-        for (i=0; i<popsize; i++)
-        {
-            rand = rnd (i, popsize-1);
-            temp = a1[rand];
-            a1[rand] = a1[i];
-            a1[i] = temp;
-            rand = rnd (i, popsize-1);
-            temp = a2[rand];
-            a2[rand] = a2[i];
-            a2[i] = temp;
-        }
-        for (i=0; i<popsize; i+=4)
-        {
-            tournament (OldPopulation[i], OldPopulation[i+1], parent1);
-            tournament (OldPopulation[i+2], OldPopulation[i+3], parent2);
-            cruce (parent1, parent2, NewPopulation[i], NewPopulation[i+1]);
-            tournament (OldPopulation[i], OldPopulation[i+1], parent1);
-            tournament (OldPopulation[i+2], OldPopulation[i+3], parent2);
-            cruce (parent1, parent2, NewPopulation[i+2], NewPopulation[i+3]);
-        }
-        free (a1);
-        free (a2);
-        return;
-    }
-
-/* Routine to copy an individual 'ind1' into another individual 'ind2' */
-    void copy_ind (float individuo1[EB], float individuo2[EB])
-    {
-        int i, j;
-        if (T !=0)
-        {
-            for (i=0; i<EB; i++)
-            {
-                individuo2[i] = individuo1[i];
-            }
-        }
-        return;
-    }
-
-    /* Routine to merge two populations into one */
-    void merge(float OldPopulation1[N][EB], float OldPopulation2[N][EB], float NewPopulation[N][EB])
-    {
-        int popsize = N;
-        int i, k;
-        for (i=0; i<popsize; i++)
-        {
-            copy_ind (OldPopulation1[i], NewPopulation[i]);
-        }
-        for (i=0, k=popsize; i<popsize; i++, k++)
-        {
-            copy_ind (OldPopulation2[i], NewPopulation[i]);
-        }
-        return;
-    }
-
-void dominancia(float evaluation[2], Fichero fsoluciones){
-    float variable1, variable2, variable3;
-
+void dominancia(Fichero fsoluciones){
+    float variable[3];
     if(fsoluciones == NULL)
     {
         printf("error");
+        exit(1);
     }
     else
     {
-        while (!feof(fsoluciones)) {
-            fscanf(fsoluciones, "%f %f %f", &variable1, &variable2, &variable3);
-            //printf("%f %f %f \n", variable1, variable2, variable3);
+        //while (!feof(fsoluciones)) {
+            fscanf(fsoluciones, "%f %f %f", &variable[0], &variable[1], &variable[2]);
+            printf("%f %f %f \n", variable[0], variable[1], variable[2]);
+        //}
+    }
+}
+
+void fmutation(float population[N][EB], int subproblema, int neightbours[N][T], float mutation[EB], Fichero fprueba){
+    
+    int r1, r2, r3; 
+
+    do
+    {
+        r1 = (int) (URAND*T);
+    } while( r1==subproblema );
+    do
+    {
+        r2 = (int) (URAND*T);
+    } while( r2==subproblema || r2==r1);
+    do
+    {
+        r3 = (int) (URAND*T);
+    } while( r3==subproblema || r3==r1 || r3==r2 );
+    
+    float xr1[EB], xr2[EB], xr3[EB];
+
+    for (int t = 0; t < EB; t++) {
+
+        xr1[t] = population[neightbours[subproblema][r1]][t];
+        xr2[t] = population[neightbours[subproblema][r2]][t];
+        xr3[t] = population[neightbours[subproblema][r3]][t];
+
+        mutation[t] = xr1[t] + F*(xr2[t] - xr3[t]);
+
+        //printf("MUTATION: sub: %d vecinos: %f (%d) + 0.5*(%f (%d) -  %f (%d)) = %f \n", subproblema, xr1[t], r1, xr2[t], r2, xr3[t], r3, mutation[t] );
+        if(mutation[t] > 1.){ 
+            mutation[t]=1.;
         }
+        if(mutation[t] < 0.) {
+            mutation[t]=0.;
+        }
+        //printf("%f %f %f = %f\n", xr1[t], xr2[t], xr3[t], mutation[subproblema][t]);
+        #ifdef degug
+        fprintf(fprueba, "MUTATION: sub: %d vecinos: %f (%d) + 0.5*(%f (%d) -  %f (%d)) = %f \n", subproblema, xr1[t], r1, xr2[t], r2, xr3[t], r3, mutation[t] );
+        #endif
     }
 }
 
 
 void iteraciones(float population[N][EB], int neightbours[N][T], float pReferenceGlobal[2], float pesos[N][2]
-                    , Fichero fsoluciones, Fichero findividuos, Fichero fpRefencia){
+                    , Fichero fsoluciones, Fichero findividuos, Fichero fpRefencia, Fichero fUsoluciones, Fichero fprueba){
     
     // DEFINICION DE VARIABLES LOCALES
-        //Operadores
-        //ORIGINAL 0.5 ambos
-        float F = 0.5;  //<- Mutacion
-        float CR = 0.5; //<- Cruce
 
         //Salida de la mutacion
         float mutation[EB];
 
+        //y
         float posibleIndividuo[EB];
 
         //Salida de la evaluacion
         float evaluation[2];
-        
+        float evaluationP[2];
+
+        float evaluationN[N][2];
+
+        evaluation[0] = 0.;
+        evaluation[1] = 0.;
+
         //Puntos de referencia por evaluacion
         float pReferenceLocal[2];
 
-        float T_j = (float) (30.-1.)/20.;
-        float PR = (float) 1./EB;
+        float T_j = (float) (1.-0.)/20.;
+        float PR = (float) 1./(float)EB;
 
     // Realizamos G iteraciones x N subproblemas = G*N = 4000 or 10000
     for (int iteracion = 0; iteracion < G; iteracion++)
@@ -584,128 +467,130 @@ void iteraciones(float population[N][EB], int neightbours[N][T], float pReferenc
             fprintf(findividuos, "\n");
         }
         fprintf(findividuos, "\n");
-        
+
         for (int subproblema = 0; subproblema < N; subproblema++)
         {
             //  MUTACION
-            //Seleccionamos un conjuntos aleatorio de indiviuos 
-            //Escogo los 3 vecinos de forma aleatoria
-            int r1, r2, r3;
-
-            do
+            #ifdef degug
+            for (int i = 0; i < N; i++)
             {
-                r1 = (int)rand() % T;
-            } while( r1==subproblema );
-            do
-            {
-                r2 = (int)rand() % T;
-            } while( r2==subproblema || r2==r1);
-            do
-            {
-                r3 = (int)rand() % T;
-            } while( r3==subproblema || r3==r1 || r3==r2 );
-
-            //printf("%d -> %d - %d - %d \n", subproblema, r1, r2, r3);
-
-            //Inicializo los tres vectores con los que voy a trabajar
-            float xr1[EB], xr2[EB], xr3[EB];
-
-            int prand = (int) URAND*subproblema;                
-
-            if (URAND < CR || subproblema == prand)
-            {
-                for (int t = 0; t < EB; t++) {
-                    xr1[t] = population[neightbours[subproblema][r1]][t];
-                    xr2[t] = population[neightbours[subproblema][r2]][t];
-                    xr3[t] = population[neightbours[subproblema][r3]][t];
-
-                    mutation[t] = xr1[t] + F*(xr2[t] - xr3[t]);
-
-                    //Restrinjo los valores a los limites (0 < x < 1)
-                    if(mutation[t] > 1.) mutation[t]=1.;
-                    if(mutation[t] < 0.) mutation[t]=0.;
-
-                    //printf("%f %f %f = %f\n", xr1[t], xr2[t], xr3[t], v[subproblema][t]);
+                for (int j = 0; j < EB; j++)
+                {
+                    fprintf(fprueba, "%f ", population[i][j]);
                 }
+                fprintf(fprueba, "\n");
             }
-            else{
-                for (int t = 0; t < EB; t++) {
-                    mutation[t] = population[subproblema][t];
-                }
-            }        
+            fprintf(fprueba, "\n");
+            #endif
+            fmutation(population, subproblema, neightbours, mutation, fprueba);
 
-
-
-            //SE DA LA MUTACION EN TORNO AL 50% DE LA VECINDAD
-            
-            //CRUCE: COMPROBAR
+            //CRUCE:
             float rd = 0.;
             int delta = (int)rand() % EB;
-            
-            rd = URAND;
+
+            #ifdef debug
+            fprintf(fprueba, "CRUCE: sub: %d \n", subproblema);
+            #endif
 
             for (int eb = 0; eb < EB; eb++)
             {
-
+                rd = URAND;
                 if(rd <= CR || eb == delta){
                     posibleIndividuo[eb] = mutation[eb];
+                    
+                    #ifdef degug
+                    fprintf(fprueba, "EB: %d - rd: %f, mutation: %f \n", eb, subproblema, rd, mutation[eb]);
+                    #endif
+
                 }else if(rd > CR || eb != delta){
-                 
                     posibleIndividuo[eb] = population[subproblema][eb];
+                    
+                    #ifdef degug
+                    fprintf(fprueba, "EB: %d - rd: %f, population: %f \n", eb, subproblema, rd, population[subproblema][eb]);
+                    #endif
+
                 }
             }
+
             
-
-            //(float)((1/(sqrt(2*PI)*T_j))*pow(e, -((pow(posibleIndividuo[eb],2)/2*pow(T_j, 2)))));
-
+            
+            //Mutacion gausiana
             float dpG = 0.;
             float nA, nB;
+            float ran;
+
+            #ifdef degug
+            fprintf(fprueba, "MGaussiana: sub: %d \n", subproblema);
+            #endif
 
             for (int eb = 0; eb < EB; eb++)
             {
-                float ran = URAND;
-                if(ran < PR){
+                ran = URAND;
+                if(ran <= PR){
                     //Distribuciones uniformes en el rango [0,1]
-                    nA=(float)rand()/RAND_MAX*(1-0)+0;
-                    nB=(float)rand()/RAND_MAX*(1-0)+0;
+                    nA=(float)(rand())/((float) RAND_MAX );
+                    nB=(float)(rand())/((float) RAND_MAX );
+                    
+                    dpG = (float) sqrt((-2.)*log(nA))*cos(2.*PI*nB);
+                    
+                    posibleIndividuo[eb] = posibleIndividuo[eb] + dpG*T_j;
 
-                    dpG = sqrt((-2.)*log(nA))*cos(2.*PI*nB);
-
-                    posibleIndividuo[eb] = posibleIndividuo[eb] + dpG;
-
-                    if(posibleIndividuo[eb] <= 0.0){
+                    if(posibleIndividuo[eb] < 0.0){
                         posibleIndividuo[eb] = (float) 0.0;
                     }
-                    if(posibleIndividuo[eb] >= 1.0){
+                    if(posibleIndividuo[eb] > 1.0){
                         posibleIndividuo[eb] = (float) 1.0;
                     }
-                }               
-            }
+                    
+                    #ifdef degug
+                    fprintf(fprueba, "EB: %d - ran: %f, modificador: %f, posibleIndividuo: %f \n", eb, subproblema, ran, dpG*T_j, posibleIndividuo[eb]);
+                    #endif
 
+                }               
+
+            }
+            
+           /*  for (int i = 0; i < EB; i++)
+            {
+                printf("%f ", posibleIndividuo[i]);
+            }
+            printf("\n"); */
+            
             /* EVALUACION */
-                evaluate_zdt3(posibleIndividuo, evaluation, pReferenceLocal);
+                evaluate_zdt3(posibleIndividuo, evaluationP, pReferenceLocal);             
+
+                #ifdef degug
+                fprintf(fprueba, "Evaluacion %f %f ,pReferenciaGlobal %f %f ,pReferenciaLocal %f %f \n", evaluation[0], evaluation[1], pReferenceGlobal[0], pReferenceGlobal[1], pReferenceLocal[0], pReferenceLocal[1]);
+                #endif
+
             /* ACTUALIZACION_PUNTO_REFERENCIA */
                 
                 if(pReferenceGlobal[0]>pReferenceLocal[0]) {
                     pReferenceGlobal[0]=pReferenceLocal[0];
-                    //printf("Global en subproblema %d>  x: %f (%f) \n", subproblema, pReferenceGlobal[0], pReferenceLocal[0]);
                 }
                 if(pReferenceGlobal[1]>pReferenceLocal[1]) {
                     pReferenceGlobal[1]=pReferenceLocal[1];
-                    //printf("Global en subproblema %d>  y: %f (%f) \n", subproblema, pReferenceGlobal[1], pReferenceLocal[1]);
                 }
             
             /* ACTUALIZACION_VECINOS */
 
-                //Valor del individuo actual
-                float valorActual = evaluacionGTE(posibleIndividuo, pesos[subproblema], pReferenceGlobal);
-                float valorVecino = 0.;
+                #ifdef degug
+                fprintf(fprueba, "Actualizacion vecinos: sub: %d \n", subproblema);    
+                #endif
 
+                //Valor del individuo actual
+                float valorActual = 0.;
+                float valorVecino = 0.;
+                int vecino = 0;
                 float vecinoActual[EB];
+                int mejor = 0;
                 //Calculamos valores para los vecinos del individuo
+                //printf("Subproblema %d \n", subproblema);
                 for (int t = 0; t < T; t++)
                 {
-                    int vecino = neightbours[subproblema][t];
+                    vecino = neightbours[subproblema][t];
+
+                    valorActual = evaluacionGTE(posibleIndividuo, pesos[vecino], pReferenceGlobal);
 
                     for (int p = 0; p < EB; p++)
                     {
@@ -714,24 +599,100 @@ void iteraciones(float population[N][EB], int neightbours[N][T], float pReferenc
 
                     valorVecino = evaluacionGTE(vecinoActual, pesos[vecino], pReferenceGlobal);
                     
-                    if (valorActual < valorVecino){
+                    /* printf("A: ");
+                    for (int p = 0; p < EB; p++)
+                    {
+                        printf("%f ", population[vecino][p]);
+                    }
+                    printf("\n"); */
+
+                    if (valorActual <= valorVecino){
                         //Sustituimos al vecino por la mejor solucion hasta el momento
+                        //printf("B: ");
+                        mejor = 1;
+
                         for (int eb = 0; eb < EB; eb++)
                         {
                             population[vecino][eb] = posibleIndividuo[eb];
+                            //printf("%f ", population[vecino][eb]);
                         }
+                        //printf("\n");
                     }
+
+
+                    #ifdef degug
+                    fprintf(fprueba, "valor actual %f, valor vecino: %f, mejor = %d \n", valorActual, valorVecino, mejor);
+                    #endif
+
+                    //printf("Subproblema %d - Vecino: %d - valorVecino: %f - ValorActual: %f \n", subproblema, vecino, valorVecino, valorActual);
                 }
+
+                if(mejor == 1){
+                    evaluation[0] = evaluationP[0];
+                    evaluation[1] = evaluationP[1];
+
+                    for (int i = 0; i < 2; i++)
+                    {
+                        evaluationN[subproblema][i] = evaluation[i];
+                    }
+                    
+                }
+                
+                #ifdef degug
+                for (int i = 0; i < N; i++)
+                {
+                    for (int j = 0; j < EB; j++)
+                    {
+                        fprintf(fprueba, "%f ", population[i][j]);
+                    }
+                    fprintf(fprueba, "\n");
+                }
+                fprintf(fprueba, "\n");
+                #endif
+                //printf("\n");
 
             fprintf(fsoluciones, "%f %f %f \n", evaluation[0], evaluation[1], 0.0);
             fprintf(fpRefencia, "%f %f \n", pReferenceGlobal[0], pReferenceGlobal[1]);
+
+
             
-            //dominancia(evaluation, fsoluciones);
-        
+
 
         }
-    }
 
+        float value1 = 0.;
+        
+        float value2 = 0.;
+        int flag = 0;
+        for (int i = 0; i < N; i++)
+        {
+            value1 = evaluationN[i][0];
+            value2 = evaluationN[i][1];
+
+            for(int n = 1; n < N; n++){
+                if((value1 < evaluationN[n][0]) && (value2 < evaluationN[n][1])){
+                    flag = 1;
+                }else if((value1 < evaluationN[n][0]) && (value2 > evaluationN[n][1])){
+                    flag = 2;
+                }else if((value1 > evaluationN[n][0]) && (value2 < evaluationN[n][1])){
+                    flag = 3;
+                }else{
+                    flag = 0;
+                }
+            }
+            if(flag == 1){
+                evaluationN[i][0]= value1;
+                evaluationN[i][1]= value2;
+            }
+        }
+            
+            
+        
+    }
+    for (int i = 0; i < N; i++)
+    {
+        fprintf(fUsoluciones, "%f %f %f \n", evaluationN[i][0], evaluationN[i][1], 0.0);
+    }
     
 }
 
@@ -739,21 +700,23 @@ void iteraciones(float population[N][EB], int neightbours[N][T], float pReferenc
 int main(){
 
     //Ficheros
-    char * commandsForGnuplot[] = {"set title \"TITLE\"", "set yrange [-0.8:1]", "plot 'soluciones.temp'"};
+    char * commandsForGnuplot[] = {"set title \"Frente\"", "set yrange [-0.8:1]", "plot 'solucionesU.temp' linetype 4 lw 2, 'PF.dat' linetype 1 lw 0.5"};
+    
     Fichero gnuplotPipe = popen ("gnuplot -persistent", "w");
+    Fichero gnuplotPipe2 = popen ("gnuplot -persistent", "w");
     Fichero fsoluciones = fopen("soluciones.temp", "w");
-    if(fsoluciones == NULL){
-        printf("ERROR fsoluciones");
-    }
+    Fichero fUsoluciones = fopen("solucionesU.temp", "w");
     Fichero findividuos = fopen("individuos.temp", "w");
     Fichero fvpesos = fopen("vpesos.temp", "w");
     Fichero fpRefencia = fopen("puntosReferencia.temp", "w");
+
+    Fichero fpruebas = fopen("pruebas.temp", "w");
 
     // Vectores alpha
     float alpha_vector[N][2];
 
     // Vectores de los vecinos
-    int neightbours[N][EB];
+    int neightbours[N][T];
 
     // Vector de N individuos
     float population[N][EB];
@@ -763,7 +726,6 @@ int main(){
 
     //Vector para punto de referencia (x,y)
     float pReference[2];
-    
 
     // Mejoramos la aleatoriedad de los rand()
     srand(time(NULL));
@@ -776,18 +738,15 @@ int main(){
     
     evaluate_zdt3_all(population, evaluation, pReference);
 
-    
-
     for (int p = 0; p < N; p++)
     {
         //Almaceno las primeras soluciones del algorirmo
-        //fprintf(fsoluciones, "%f %f %f \n", evaluation[p][0], evaluation[p][1], 0.0);
+        fprintf(fsoluciones, "%f %f %f \n", evaluation[p][0], evaluation[p][1], 0.0);
         fprintf(fvpesos, "%f %f \n", alpha_vector[p][0], alpha_vector[p][1]);
     }  
 
-    
     /* OPERACIONES */
-    iteraciones(population, neightbours, pReference, alpha_vector, fsoluciones, findividuos, fpRefencia);
+    iteraciones(population, neightbours, pReference, alpha_vector, fsoluciones, findividuos, fpRefencia, fUsoluciones, fpruebas);
 
     //fprintf(temp, "%1.3f %1.3f \n", pReference[0], pReference[1]);
 
@@ -795,11 +754,18 @@ int main(){
     {
         fprintf(gnuplotPipe, "%s \n", commandsForGnuplot[i]); //Send commands to gnuplot one by one.
     }
+    for (int i=0; i < 3; i++)
+    {
+        fprintf(gnuplotPipe2, "%s \n", commandsForGnuplot2[i]); //Send commands to gnuplot one by one.
+    }
 
     fclose(fsoluciones);
     fclose(findividuos);
     fclose(fvpesos);
     fclose(fpRefencia);
+    fclose(fUsoluciones);
 
     return 0;
 }
+
+
