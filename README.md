@@ -1,5 +1,5 @@
-# ASC
- Repositorio para la resolución del proyecto para la asignatura ASC (Aplicaciones de Soft Computing) (2020)
+# Algoritmo multiobjetivo basado en agregación. 
+ Repositorio para la resolución del problema ZDT3 mediante la formulación Tchebychef.
 
 ## Objetivo del proyecto
 Realizar una implementación de un algoritmo multiobjetivo basado en agregación, con posibilidad de manejo de restricciones y cuyas prestaciones sobre los problemas propuestos superen un umbral concreto.
@@ -13,6 +13,7 @@ El problema a solucionar se llama ZDT3, y consiste en obtener el frontal pareto-
 La carpeta del proyecto contiene dos ficheros propios necesarios para las comparaciones:
 - PF.dat: Frente paleto ideal del problema ZDT3.
 - all _ popm _ seed9.out: Contiene las soluciones de todas las generaciones generados por el profesor.
+
 ## Ejecución
 Para ejecutar el proyecto, en un entorno GNU/Linux, en este caso, Debian 10, necesitamos tener instalado GNUPlot. 
 
